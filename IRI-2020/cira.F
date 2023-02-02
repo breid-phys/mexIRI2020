@@ -19,6 +19,7 @@ C 2014.02 07/24/14 COMMON/iounit/konsol, mess turn off messages
 C 2014.05 12/22/14 TSELEC: SV(25),SVV(25)
 C 2015.01 02/18/15 switches set (TSELEC) only in main not in GTD7,GLOBE7
 C 2015.01 07/20/15 GLOB7S: P(150)->P(100)
+C 2023.02 02/02/23 MEX: Replaced STOP statement with error code
 C
 
       SUBROUTINE GTD7(IYD,SEC,ALT,GLAT,GLONG,STL,F107A,F107,AP,MASS,D,T)

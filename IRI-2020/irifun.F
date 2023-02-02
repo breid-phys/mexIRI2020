@@ -167,6 +167,7 @@ C 2020.10 04/20/22 IONTIF: del. INVDIP calc., output for fixed heights
 C 2020.10 04/21/22 ELTEIK: del. INVDIP calc., output for fixed heights
 C 2020.10 04/23/22 ELTE -> BOOKER1, COMMON/BLOTE deleted
 C 2020.10 04/23/22 TI -> BOOKER1, COMMON/BLOCK8 deleted
+C 2023.02 02/02/23 MEX: Replaced STOP statement with error code
 C                  
 c- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 c IRI functions and subroutines:

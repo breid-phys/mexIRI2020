@@ -71,6 +71,7 @@ C 2020.01 03/05/20 Updating to IGRF-13 (2020)
 C 2020.02 09/08/20 Comment RECALC: IYR outside (P. Coisson)
 C 2020.03 09/20/21 Corrected INTERVAL 1900-2025 in write statement
 C 2020.03 09/20/21 RECALC: DT=..2015, ..2020 (R. Panfili)
+C 2023.02 02/02/23 MEX: Replaced STOP statement with error code
 c-----------------------------------------------------------------------        
 C 
         subroutine igrf_sub(xlat,xlong,year,height,
