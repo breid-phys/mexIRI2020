@@ -1,0 +1,11 @@
+# exclude trial files
+scrap*
+test*
+devel*
+# exclude temporary files MATLAB creates
+*.m~
+*.asv
+*.mod
+*.mex*
+
+

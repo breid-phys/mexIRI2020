@@ -1,0 +1,27 @@
+Update History (starting 4/28/2015)
+
+04/28/2015   00_iri2012.tar, irisub.for, irifun.for, iritest.for
+07/12/2015   00_iri2012.tar, irisub.for, irifun.for, iritest.for, igrf.for
+07/28/2015   00_iri2012.tar, irifun.for, cira.for
+02/04/2016   00_iri2016.tar, irifun.for, irisub.for, iritest.for, mcsat%%.dat
+02/17/2016   00_iri2016.tar, igrf.for
+06/12/2016   00_iri2016.tar, irifun.for, irisub.for, iritest.for
+09/23/2016   00_iri2016.tar, irifun.for, irisub.for, iritest.for, iriflip.for
+10/30/2016   00_iri2016.tar, irifun.for, irisub.for
+02/23/2017   00_iri2016.tar, irifun.for, irisub.for, iritest.for
+11/03/2017   00_iri2016.tar, irifun.for, irisub.for, iritest.for, igrf.for
+03/26/2018   00_iri2016.tar, irifun.for, irisub.for
+04/11/2018   irifun.for
+05/13/2019   00_iri.tar, irisub.for, irifun.for, iritest.for, igrf.for, irifli           .for
+09/01/2019   irirtam.for, irirtam-test.for
+12/26/2019   irirtam.for (00_iri2016.tar still contains the old irirtam.for)
+04/06/2020   00_iri.tar, irisub.for, irifun.for, iritest.for, igrf.for, 
+             dgrf2015.dat, igrf2020.dat, igrf2020s.dat 
+09/22/2020   00_iri.tar, irisub.for, irifun.for, iritest.for, igrf.for
+10/12/2020   00_iri.tar, irifun.for, iritest.for
+10/13/2021   00_iri.tar, irisub.for, irifun.for, iritest.for, igrf.for
+01/12/2022   00_iri.tar, irisub.for, irifun.for
+08/05/2022   00_iri.tar, irisub.for, irifun.for, iritest.for, igrf.for, 
+             iridreg.for, rocdrift.for
+10/02/2022   00_iri.zip, irisub.for
+10/07/2022   00_iri.zip
