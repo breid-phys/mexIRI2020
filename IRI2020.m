@@ -39,7 +39,7 @@ function Out = IRI2020(lat,lon,time,alt,varargin)
 ErrorStr = 'MATLAB:IRI2020';
 
 % PATH TO MEX FILE
-[RootDir, ~, ~] = fileparts(mfilename('fullpath')); 
+[RootDir, ~, ~] = fileparts(mfilename('fullpath'));
 
 % PATH TO NRLMSISE2.1 FORTRAN CODE
 ModelDir = fullfile(RootDir,'IRI-2020');
@@ -57,7 +57,7 @@ elseif ~exist(ModelDir,'dir')
 end
 JF = ones(50,1);
 
-JF([4,5,6,23,30,33,34,35,39,40,47])=-1;
+JF([4,5,6,22,23,30,33,34,35,39,40,47])=-1;
 
 %    JF switches to turn off/on (.true./.false.) several options
 %
@@ -69,7 +69,7 @@ JF([4,5,6,23,30,33,34,35,39,40,47])=-1;
 %    4    B0,B1 - Bil-2000       B0,B1 - other models jf(31)     false
 %    5    foF2 - CCIR            foF2 - URSI                     false
 %    6    Ni - DS-1995 & DY-1985 Ni - RBV-2010 & TBT-2015        false
-%    7    Ne - Tops: f10.7<188   f10.7 unlimited                     t            
+%    7    Ne - Tops: f10.7<188   f10.7 unlimited                     t
 %    8    foF2 from model        foF2 or NmF2 - user input           t
 %    9    hmF2 from model        hmF2 or M3000F2 - user input        t
 %   10    Te - Standard          Te - Using Te/Ne correlation        t
@@ -93,9 +93,9 @@ JF([4,5,6,23,30,33,34,35,39,40,47])=-1;
 %   27    IG12 from file         IG12 - user                         t
 %   28    spread-F probability 	 not computed                        t
 %   29    IRI01-topside          new options as def. by JF(30)       t
-%   30    IRI01-topside corr.    NeQuick topside model   	     false 
+%   30    IRI01-topside corr.    NeQuick topside model   	     false
 % (29,30) = (t,t) IRIold, (f,t) IRIcor, (f,f) NeQuick, (t,f) IRIcor2
-%   31    B0,B1 ABT-2009	     B0 Gulyaeva-1987 h0.5               t   
+%   31    B0,B1 ABT-2009	     B0 Gulyaeva-1987 h0.5               t
 % (4,31) = (t,t) Bil-00, (f,t) ABT-09, (f,f) Gul-87, (t,f) not used
 %   32    F10.7_81 from file     F10.7_81 - user input (oarr(46))    t
 %   33    Auroral boundary model on/off  true/false	             false
@@ -116,12 +116,14 @@ JF([4,5,6,23,30,33,34,35,39,40,47])=-1;
 %   47    CGM computation on 	 CGM computation off             false
 %   48    Ti  Tru-2021           Bil-1981                            t
 %      ....
-%   50    
+%   50
 %   ------------------------------------------------------------------
 
 mode='default';
 Update=false;
 Storm=false;
+F107=[];
+F107_81=[];
 i=1;
 while i <= numel(varargin)
     if ischar(varargin{i}) || isstring(varargin{i})
@@ -135,6 +137,12 @@ while i <= numel(varargin)
             Update=true;
         elseif strcmpi(varargin{i},'jf')
             JF = varargin{i+1};
+            i=i+1;
+        elseif strcmpi(varargin{i},'F107')
+            F107 = varargin{i+1};
+            i=i+1;
+        elseif strcmpi(varargin{i},'F107_81')
+            F107_81 = varargin{i+1};
             i=i+1;
         else
             error(ErrorStr,[...
@@ -171,7 +179,7 @@ try
         warning(ErrorStr,...
             'Required MEX file mex_iri2020 does not exist. Attempting to compile.')
 
-             mex('-compatibleArrayDims','-DO3','-Dstatic','-DfPIC', ...
+        mex('-compatibleArrayDims','-DO3','-Dstatic','-DfPIC', ...
             '-Dffast-math','-Dmarch=native', ...
             '-output',fullfile(RootDir,'mex_iri2020'), ...
             fullfile(ModelDir,'irisub.F'), ...
@@ -261,7 +269,12 @@ try
         nper = size(nout,1);
         nprof = size(nout,2);
 
-        outfIndex = [(1:nalt)']+[(0:(nprof-1)).*nummax.*nper];
+        outfIndex = false(nummax,nprof.*nper);
+        for i = 1:numel(nout)
+            outfIndex(1:nout(i),i) = true;
+        end
+        outfIndex = find(outfIndex);
+        %         outfIndex = [(1:nalt)']+[(0:(nprof-1)).*nummax.*nper];
         OutFFmt = @(X) X(outfIndex);
         oarIndex = 1:nper:(nper*nprof);
 
@@ -343,6 +356,8 @@ try
     % no user inputs
     JF([8,9,10,13,14,15,16,17,25,27,32,43,44,45,46]) = 1;
 
+
+
     % no outputs but our outputs
     JF([34,38]) = -1;
 
@@ -351,9 +366,32 @@ try
     yr = time(:).Year;
 
     ind = [zeros(size(lat(:))),lat(:),lon(:),yr(:),mmdd(:),UT(:)+25,vbeg(:),vend(:),vstp(:)];
+    UInput = false;
+    if ~isempty(F107)
+        JF(25) = -1;
+        UInput=true;
+    end
 
-    [outf,oar] = mex_iri2020(double(JF),double(ind'));
+    if ~isempty(F107_81)
+        JF(32) = -1;
+        UInput=true;
+    end
 
+    if UInput
+        UInput = zeros(size(ind,1),16);
+        if ~isempty(F107)
+            UInput(:,10) = F107;
+        end
+        if ~isempty(F107_81)
+            UInput(:,12) = F107_81;
+        end
+
+        [outf,oar] = mex_iri2020(double(JF),double(ind'), double(UInput'));
+
+    else
+        [outf,oar] = mex_iri2020(double(JF),double(ind'));
+
+    end
     k = 1;
 
     if JF(1) > 0 % output electron density
@@ -399,54 +437,54 @@ try
     Out.mlon = oarFmt(oar,50);
     Out.mlt  = oarFmt(oar,54);
 
-%            OARR(1:100)   ADDITIONAL OUTPUT PARAMETERS         
-%
-%      #OARR(1) = NMF2/M-3           #OARR(2) = HMF2/KM
-%      #OARR(3) = NMF1/M-3           #OARR(4) = HMF1/KM
-%      #OARR(5) = NME/M-3            #OARR(6) = HME/KM
-%       OARR(7) = NMD/M-3             OARR(8) = HMD/KM
-%       OARR(9) = HHALF/KM           #OARR(10) = B0/KM
-%       OARR(11) =VALLEY-BASE/M-3     OARR(12) = VALLEY-TOP/KM
-%       OARR(13) = TE-PEAK/K          OARR(14) = TE-PEAK HEIGHT/KM
-%      #OARR(15) = TE-MOD(300KM)     #OARR(16) = TE-MOD(400KM)/K
-%       OARR(17) = TE-MOD(600KM)      OARR(18) = TE-MOD(1400KM)/K
-%       OARR(19) = TE-MOD(3000KM)     OARR(20) = TE(120KM)=TN=TI/K
-%       OARR(21) = TI-MOD(430KM)      OARR(22) = X/KM, WHERE TE=TI
-%       OARR(23) = SOL ZENITH ANG/DEG OARR(24) = SUN DECLINATION/DEG
-%       OARR(25) = DIP/deg            OARR(26) = DIP LATITUDE/deg
-%       OARR(27) = MODIFIED DIP LAT.  OARR(28) = Geographic latitude
-%       OARR(29) = sunrise/dec. hours OARR(30) = sunset/dec. hours
-%       OARR(31) = ISEASON (1=spring) OARR(32) = Geographic longitude
-%      #OARR(33) = Rz12               OARR(34) = Covington Index
-%      #OARR(35) = B1                 OARR(36) = M(3000)F2
-%      $OARR(37) = TEC/m-2           $OARR(38) = TEC_top/TEC*100.
-%      #OARR(39) = gind (IG12)        OARR(40) = F1 probability 
-%      #OARR(41) = F10.7 daily        OARR(42) = c1 (F1 shape)
-%       OARR(43) = daynr              OARR(44) = equatorial vertical 
-%       OARR(45) = foF2_storm/foF2_quiet         ion drift in m/s
-%      #OARR(46) = F10.7_81           OARR(47) = foE_storm/foE_quiet 
-%       OARR(48) = spread-F probability          
-%       OARR(49) = Geomag. latitude   OARR(50) = Geomag. longitude  
-%       OARR(51) = ap at current time OARR(52) = daily ap
-%       OARR(53) = invdip/degree      OARR(54) = MLT-Te
-%       OARR(55) = CGM-latitude       OARR(56) = CGM-longitude
-%       OARR(57) = CGM-MLT            OARR(58) = CGM lat eq. aurl bodry
-%       OARR(59) = CGM-lati(MLT=0)    OARR(60) = CGM-lati for MLT=1
-%       OARR(61) = CGM-lati(MLT=2)    OARR(62) = CGM-lati for MLT=3
-%       OARR(63) = CGM-lati(MLT=4)    OARR(64) = CGM-lati for MLT=5
-%       OARR(65) = CGM-lati(MLT=6)    OARR(66) = CGM-lati for MLT=7
-%       OARR(67) = CGM-lati(MLT=8)    OARR(68) = CGM-lati for MLT=9
-%       OARR(69) = CGM-lati(MLT=10)   OARR(70) = CGM-lati for MLT=11
-%       OARR(71) = CGM-lati(MLT=12)   OARR(72) = CGM-lati for MLT=13
-%       OARR(73) = CGM-lati(MLT=14)   OARR(74) = CGM-lati for MLT=15
-%       OARR(75) = CGM-lati(MLT=16)   OARR(76) = CGM-lati for MLT=17
-%       OARR(77) = CGM-lati(MLT=18)   OARR(78) = CGM-lati for MLT=19
-%       OARR(79) = CGM-lati(MLT=20)   OARR(80) = CGM-lati for MLT=21
-%       OARR(81) = CGM-lati(MLT=22)   OARR(82) = CGM-lati for MLT=23
-%       OARR(83) = Kp at current time OARR(84) = magnetic declination 
-%       OARR(85) = L-value            OARR(86) = dipole moment 
-%       OARR(87) = SAX300             OARR(88) = SUX300 
-%      #OARR(89) = HNEA              #OARR(90) = HNEE 
+    %            OARR(1:100)   ADDITIONAL OUTPUT PARAMETERS
+    %
+    %      #OARR(1) = NMF2/M-3           #OARR(2) = HMF2/KM
+    %      #OARR(3) = NMF1/M-3           #OARR(4) = HMF1/KM
+    %      #OARR(5) = NME/M-3            #OARR(6) = HME/KM
+    %       OARR(7) = NMD/M-3             OARR(8) = HMD/KM
+    %       OARR(9) = HHALF/KM           #OARR(10) = B0/KM
+    %       OARR(11) =VALLEY-BASE/M-3     OARR(12) = VALLEY-TOP/KM
+    %       OARR(13) = TE-PEAK/K          OARR(14) = TE-PEAK HEIGHT/KM
+    %      #OARR(15) = TE-MOD(300KM)     #OARR(16) = TE-MOD(400KM)/K
+    %       OARR(17) = TE-MOD(600KM)      OARR(18) = TE-MOD(1400KM)/K
+    %       OARR(19) = TE-MOD(3000KM)     OARR(20) = TE(120KM)=TN=TI/K
+    %       OARR(21) = TI-MOD(430KM)      OARR(22) = X/KM, WHERE TE=TI
+    %       OARR(23) = SOL ZENITH ANG/DEG OARR(24) = SUN DECLINATION/DEG
+    %       OARR(25) = DIP/deg            OARR(26) = DIP LATITUDE/deg
+    %       OARR(27) = MODIFIED DIP LAT.  OARR(28) = Geographic latitude
+    %       OARR(29) = sunrise/dec. hours OARR(30) = sunset/dec. hours
+    %       OARR(31) = ISEASON (1=spring) OARR(32) = Geographic longitude
+    %      #OARR(33) = Rz12               OARR(34) = Covington Index
+    %      #OARR(35) = B1                 OARR(36) = M(3000)F2
+    %      $OARR(37) = TEC/m-2           $OARR(38) = TEC_top/TEC*100.
+    %      #OARR(39) = gind (IG12)        OARR(40) = F1 probability
+    %      #OARR(41) = F10.7 daily        OARR(42) = c1 (F1 shape)
+    %       OARR(43) = daynr              OARR(44) = equatorial vertical
+    %       OARR(45) = foF2_storm/foF2_quiet         ion drift in m/s
+    %      #OARR(46) = F10.7_81           OARR(47) = foE_storm/foE_quiet
+    %       OARR(48) = spread-F probability
+    %       OARR(49) = Geomag. latitude   OARR(50) = Geomag. longitude
+    %       OARR(51) = ap at current time OARR(52) = daily ap
+    %       OARR(53) = invdip/degree      OARR(54) = MLT-Te
+    %       OARR(55) = CGM-latitude       OARR(56) = CGM-longitude
+    %       OARR(57) = CGM-MLT            OARR(58) = CGM lat eq. aurl bodry
+    %       OARR(59) = CGM-lati(MLT=0)    OARR(60) = CGM-lati for MLT=1
+    %       OARR(61) = CGM-lati(MLT=2)    OARR(62) = CGM-lati for MLT=3
+    %       OARR(63) = CGM-lati(MLT=4)    OARR(64) = CGM-lati for MLT=5
+    %       OARR(65) = CGM-lati(MLT=6)    OARR(66) = CGM-lati for MLT=7
+    %       OARR(67) = CGM-lati(MLT=8)    OARR(68) = CGM-lati for MLT=9
+    %       OARR(69) = CGM-lati(MLT=10)   OARR(70) = CGM-lati for MLT=11
+    %       OARR(71) = CGM-lati(MLT=12)   OARR(72) = CGM-lati for MLT=13
+    %       OARR(73) = CGM-lati(MLT=14)   OARR(74) = CGM-lati for MLT=15
+    %       OARR(75) = CGM-lati(MLT=16)   OARR(76) = CGM-lati for MLT=17
+    %       OARR(77) = CGM-lati(MLT=18)   OARR(78) = CGM-lati for MLT=19
+    %       OARR(79) = CGM-lati(MLT=20)   OARR(80) = CGM-lati for MLT=21
+    %       OARR(81) = CGM-lati(MLT=22)   OARR(82) = CGM-lati for MLT=23
+    %       OARR(83) = Kp at current time OARR(84) = magnetic declination
+    %       OARR(85) = L-value            OARR(86) = dipole moment
+    %       OARR(87) = SAX300             OARR(88) = SUX300
+    %      #OARR(89) = HNEA              #OARR(90) = HNEE
 
     Out.JF = JF;
 
